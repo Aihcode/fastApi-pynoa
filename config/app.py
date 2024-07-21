@@ -15,7 +15,7 @@ class Config:
         self.app = FastAPI(title="FastApi Pynoa")
         self.web = APIRouter()
         self.api = APIRouter(prefix="/admin/api")
-        self.api_public = APIRouter(prefix="/api/public")
+        self.api_public = APIRouter(prefix="/api/frontstore")
         self.auth = APIRouter(prefix="/auth")
         self.add_middleware()
 

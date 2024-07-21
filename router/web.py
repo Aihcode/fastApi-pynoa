@@ -19,9 +19,9 @@ async def index(request: requests):
         "description": "that is all you need to know about PyNoa",
         "apis": {
             "api": "http://localhost:8000/api",
-            "public": "http://localhost:8000/api/public",
+            "public": "http://localhost:8000/api/frontstore",
             "api_text": "Admin api",
-            "public_text": "Public Store api"
+            "public_text": "Front Store api"
         },
         "button_text": "Read Docs",
         "button_url": "http://localhost:8000/redoc"

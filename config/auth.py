@@ -10,7 +10,8 @@ from orm_db import models
 from orm_db.crud import get_user_by_email as get_user_db
 from helpers.passwordgen import get_password_hash, verify_password
 from helpers.getdb import get_db
-from json import dumps
+from json import dumps, loads
+import os
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -45,6 +46,13 @@ class Profile(BaseModel):
     last_name: str
     bio: str
     pic_url: str
+    
+
+class CustomProfile(Profile):
+    is_admin: bool
+    is_client: bool
+    is_active: bool
+    message: str
 
 class UserInDB(User):
     hashed_password: str
@@ -108,9 +116,40 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     
+    profileData = {
+        'id': 0,
+        'user_id': 0,
+        'first_name': '',
+        'last_name': '',
+        'bio': '',
+        'pic_url': '',
+        'is_admin': False,
+        'is_client': False,
+        'is_active': False,
+        'message': 'User Profile Not Found'
+    }
     profile = db.query(models.Profile).filter(models.Profile.user_id == user.id).first()
+    
+    if profile is not None and user is not None:
+
+        profilePic = ('https://ui-avatars.com/api/?name=%s+%s&format=svg&size=128') % (profile.first_name, profile.last_name)
+        if profile.pic_url is not None:
+            profilePic = str(profile.pic_url).replace('./', os.getenv('SERVER_URL') + '/')
+
+        profileData = {
+            'id': profile.id,
+            'user_id': profile.user_id,
+            'first_name': profile.first_name,
+            'last_name': profile.last_name,
+            'bio': profile.bio,
+            'pic_url': profilePic,
+            'is_admin': user.is_admin,
+            'is_client': user.is_client,
+            'is_active': user.is_active,
+            'message': 'User Profile Found'
+        }
    
-    return profile
+    return profileData
 
 
 async def get_current_active_user(

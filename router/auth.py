@@ -1,5 +1,5 @@
 from config.app import Config
-from config.auth import ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user, create_access_token, get_current_active_user, get_current_active_user_role, Annotated, OAuth2PasswordRequestForm, Depends, Token, get_user, HTTPException, status, User, UserRole, Profile, timedelta
+from config.auth import ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user, create_access_token, get_current_active_user, get_current_active_user_role, Annotated, OAuth2PasswordRequestForm, Depends, Token, get_user, HTTPException, status, User, UserRole, CustomProfile, timedelta
 from orm_db import crud, schemas
 from sqlalchemy.orm import Session
 from fastapi import UploadFile, File
@@ -158,7 +158,7 @@ def get_users(skip:int=0, limit:int=0, db:Session=Depends(get_db), current_user=
     return users
 
 
-@auth.get("/users/me/", response_model=Profile)
+@auth.get("/users/me/", response_model=CustomProfile)
 async def read_users_me(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
