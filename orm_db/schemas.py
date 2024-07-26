@@ -63,7 +63,6 @@ class ObjectID(BaseModel):
 
 
 class Collection(BaseModel):
-    id : int
     title : str
     description : str
     category_condition : str
@@ -98,7 +97,7 @@ class ProductView(BaseModel):
 
 
 class Inventory(BaseModel):
-    id : int
+    product_id: int
     inventory_location_id: int
     product_variant_id: int
     quantity: int
@@ -113,7 +112,6 @@ class Inventory(BaseModel):
 
 
 class InventoryLocation(BaseModel):
-    id : int
     title : str
     address : str
 
@@ -121,7 +119,6 @@ class InventoryLocation(BaseModel):
         orm_model = True
 
 class ProductVariant(BaseModel):
-    id: int
     title: str
     price: float
 
@@ -129,7 +126,6 @@ class ProductVariant(BaseModel):
         orm_model = True
 
 class ProductOption(BaseModel):
-    id: int
     variant: int
     title: str
     

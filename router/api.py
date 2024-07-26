@@ -23,7 +23,7 @@ async def index(
     return {"message": "Hello World API", "user": current_user}
 
 
-@api.get("/product")
+@api.get("/products")
 async def index_product(
     payload: schemas.ObjectByPagination = Body(...),
     current_user=Depends(get_current_active_user),
@@ -108,9 +108,9 @@ async def delete_product(
     return crud.delete_product(db=next(get_db()), product_id=product_id)
 
 
-@api.get("/product/variant")
+@api.get("/product/variant/{variant_id}")
 async def index_product_variant(
-    payload: schemas.ObjectByPagination = Body(...),
+    variant_id: int,
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -122,7 +122,7 @@ async def index_product_variant(
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
     return crud.get_product_variants(
-        db=next(get_db(), limit=payload.limit or 10, skip=payload.skip or 0)
+        db=next(get_db()), variant_id=variant_id
     )
 
 
@@ -446,6 +446,7 @@ async def post_inventory_location_product(
     Returns:
         dict: A dictionary containing the message "Hello World API".
     """
+    
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
     return crud.create_inventory_location(db=next(get_db()), inventory_location=payload)
@@ -485,6 +486,7 @@ async def delete_inventory_location_product(
 
 @api.get("/inventory")
 async def index_inventory(
+    payload: schemas.ObjectByPagination = Body(...),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -495,11 +497,28 @@ async def index_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_inventory(db=next(get_db()))
+    
+    return crud.get_inventories(db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0)
+
+@api.get("/inventory/{inventory_id}")
+async def index_inventory(
+    inventory_id: int,
+    current_user=Depends(get_current_active_user),
+):
+    """
+    A function that handles the GET request to the root endpoint ("/") of the ADMIN API.
+
+    Returns:
+        dict: A dictionary containing the message "Hello World API".
+    """
+    if not current_user:
+        raise HTTPException(status_code=409, detail="Not logged in")
+    return crud.get_inventory(db=next(get_db()), inventory_id=inventory_id)
 
 
 @api.post("/inventory")
 async def post_inventory(
+    payload: schemas.Inventory = Body(...),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -510,12 +529,13 @@ async def post_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_inventory(db=next(get_db()))
+    return crud.create_inventory(db=next(get_db()), inventory=payload)
 
 
 @api.put("/inventory/{invenroty_id}")
 async def put_inventory(
     invenroty_id: int,
+    payload: schemas.Inventory = Body(...),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -526,7 +546,7 @@ async def put_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_inventory(db=next(get_db()), inventory_id=invenroty_id)
+    return crud.update_inventory(db=next(get_db()), inventory=payload,inventory_id=invenroty_id)
 
 
 @api.delete("/inventory/{invenroty_id}")

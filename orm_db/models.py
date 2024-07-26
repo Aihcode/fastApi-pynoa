@@ -10,6 +10,8 @@ class User(Base):
     email = Column(String(400), unique=True, index=True)
     profile_id = Column(Integer, nullable=True)
     hashed_password = Column(String(800))
+    validatetion_code = Column(String(800))
+    is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     is_client = Column(Boolean, default=True)
@@ -65,7 +67,7 @@ class ProductVariant(Base):
     __tablename__ = "product_variants"
     id = Column(Integer, primary_key=True)
     title = Column(String(400))
-    price = Column(Integer)
+    price = Column(Float)
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
@@ -77,9 +79,10 @@ class InventoryLocation(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
-class inventory(Base):
+class Inventory(Base):
     __tablename__ = "inventory"
     id = Column(Integer, primary_key=True)
+    product_id = Column(Integer, ForeignKey("products.id"))
     inventory_location_id = Column(Integer, ForeignKey("inventory_locations.id"))
     product_variant_id = Column(Integer, ForeignKey("product_variants.id"))
     quantity = Column(Integer)
@@ -96,7 +99,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(400))
     description = Column(String(800))
-    cost = Column(Integer)
+    cost = Column(Float)
     categories_list = Column(String(800))
     tags_list = Column(String(800))
     created_at = Column(DateTime, default=datetime.now())
