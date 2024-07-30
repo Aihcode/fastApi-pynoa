@@ -2,8 +2,11 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 from helpers.passwordgen import get_password_hash
+from helpers.encryptgen import get_hashed_name
 from json import dumps, loads
 from datetime import datetime
+from random import random, choice
+import os
 
 
 def get_user(db: Session, user_id: int):
@@ -239,7 +242,7 @@ def __get_inventory_location_name__(db: Session, inventory_location_id: int):
         "address": db_location.address
     }
 
-def __get_variants__(db: Session, product_id: int):
+def __get_variants__(db: Session, product_id: int, cost: int = 0):
             db_inventory = db.query(models.Inventory).filter(
                 models.Inventory.product_id == product_id
             )
@@ -253,8 +256,19 @@ def __get_variants__(db: Session, product_id: int):
                 inventory_location_details = __get_inventory_location_name__(db, inventory.inventory_location_id)
                 
                 availability = "In Stock" if inventory.quantity > 0 else "Out Of Stock"
-                stock_value = (db_one_variant.price * inventory.quantity)
-                estimated_sales = (db_one_variant.price * inventory.sales)
+                
+                if inventory.quantity <= 0:
+                    stock_value = 0
+                    estimated_sales = 0
+                    estimated_earnings = 0
+                    conversion_rate = 0
+                else:    
+                    stock_value = (cost * int(inventory.quantity))
+                    estimated_sales = (db_one_variant.price * inventory.quantity)
+                    estimated_earnings = ((db_one_variant.price - cost) * inventory.quantity)
+                    conversion_rate = ((stock_value / estimated_sales) * 100)
+                
+                
                 location_code = ("%s%s%s%s" % (inventory.inventory_location_id, inventory.id, int(inventory.lat), abs(int(inventory.lng))))
                 variants.append(
                     {
@@ -262,8 +276,12 @@ def __get_variants__(db: Session, product_id: int):
                         "title": db_one_variant.title,
                         "price": db_one_variant.price,
                         "availability": availability,
-                        "stock_value": stock_value,
-                        "estimated_sales": estimated_sales,
+                        "currency_base": db_one_variant.currency_base,
+                        "stock_value": float("{:.3f}".format(stock_value)),
+                        "estimated_sales": float("{:.3f}".format(estimated_sales)),
+                        "estimated_earnings": float("{:.3f}".format(estimated_earnings)),
+                        "conversion_rate": float("{:.3f}".format(conversion_rate)),
+                        "conversion_rate_string": ("%s%%" % round(conversion_rate)),
                         "inventory": [
                             {
                                 "id": inventory.id,
@@ -337,7 +355,7 @@ def create_product(db: Session, product: schemas.Product):
 
     # create product
     db_product = models.Product(
-        title=product.title,
+        name=product.name,
         description=product.description,
         cost=product.cost,
         categories_list=dumps(categories),
@@ -410,7 +428,7 @@ def update_product(db: Session, product: schemas.Product, product_id: int):
             if tag:
                 tags_updated.append(tag.id)
 
-    db_product.title = product.title or db_product.title
+    db_product.name = product.name or db_product.name
     db_product.description = product.description or db_product.description
     db_product.cost = product.cost or db_product.cost
     db_product.categories_list = dumps(list(set(categories_updated)))
@@ -426,11 +444,11 @@ def get_product(db: Session, product_id: int):
 
         categories = __get_categories_from_mapper__(db, data.categories_list)
         tags = __get_tags_from_mapper__(db, data.tags_list)
-        variants = __get_variants__(db, product_id)
+        variants = __get_variants__(db, product_id, data.cost)
 
         predata = {
             "id": data.id,
-            "title": data.title,
+            "name": data.name,
             "description": data.description,
             "cost": data.cost,
             "categories": categories,
@@ -450,11 +468,11 @@ def get_products(db: Session, skip: int = 0, limit: int = 10):
         for product in data:
             categories = __get_categories_from_mapper__(db, product.categories_list)
             tags = __get_tags_from_mapper__(db, product.tags_list)
-            variants = __get_variants__(db, product.id)
+            variants = __get_variants__(db, product.id, product.cost)
 
             prodata = {
                 "id": product.id,
-                "title": product.title,
+                "name": product.name,
                 "description": product.description,
                 "cost": product.cost,
                 "categories": categories,
@@ -627,7 +645,7 @@ def delete_inventory(db: Session, inventory_id: int):
 
 def create_product_variant(db: Session, product_variant: schemas.ProductVariant):
     db_product_variant = models.ProductVariant(
-        title=product_variant.title, price=product_variant.price
+        title=product_variant.title, price=product_variant.price, currency_base=product_variant.currency_base
     )
     db.add(db_product_variant)
     db.commit()
@@ -643,6 +661,7 @@ def update_product_variant(db: Session, product_variant: schemas.ProductVariant,
     )
     db_product_variant.title = product_variant.title or db_product_variant.title
     db_product_variant.price = product_variant.price or db_product_variant.price
+    db_product_variant.currency_base = product_variant.currency_base or db_product_variant.currency_base
     db.commit()
     db.refresh(db_product_variant)
     return db_product_variant
@@ -743,4 +762,178 @@ def delete_product_option(db: Session, product_option_id: int):
         "message": "Product Option deleted",
         "id": product_option_id,
         "title": db_product_option.title,
+    }
+
+
+
+def create_team(db: Session, team: schemas.Team):
+    db_team = models.Team(name=team.name)
+    db.add(db_team)
+    db.commit()
+    db.refresh(db_team)
+    return db_team
+
+
+def update_team(db: Session, team: schemas.Team, team_id: int):
+    db_team = db.query(models.Team).filter(models.Team.id == team_id).first()
+    db_team.name = team.name or db_team.name
+    db.commit()
+    db.refresh(db_team)
+    return db_team
+
+
+def get_team(db: Session, team_id: int):
+    return db.query(models.Team).filter(models.Team.id == team_id).first()
+
+
+def get_teams(db: Session, skip: int = 0, limit: int = 10):
+    counter = db.query(models.Team).count()
+    data = db.query(models.Team).offset(skip).limit(limit)
+    counterByFilters = data.count()
+    return {
+        "data": data,
+        "counter_teams": counter,
+        "current_counter_show": counterByFilters,
+    }
+
+def create_team_member(db: Session, team_member: schemas.TeamMember):
+    db_team_member = models.TeamMember(
+        user_id=team_member.user_id, team_id=team_member.team_id, role=team_member.role
+    )
+    ID = db.query(models.Team).filter(models.Team.id == team_member.team_id).first().id
+
+    if ID != int(team_member.team_id):
+        return {"message": "Team does not exist"}
+    
+    db.add(db_team_member)
+    db.commit()
+    db.refresh(db_team_member)
+    return db_team_member
+
+
+def update_team_member(db: Session, team_member: schemas.TeamMember, team_member_id: int):
+    db_team_member = (
+        db.query(models.TeamMember)
+        .filter(models.TeamMember.id == team_member_id)
+        .first()
+    )
+    db_team_member.user_id = team_member.user_id or db_team_member.user_id
+    db_team_member.team_id = team_member.team_id or db_team_member.team_id
+    db_team_member.role = team_member.role or db_team_member.role
+
+    ID = db.query(models.Team).filter(models.Team.id == team_member.team_id).first().id
+
+    if ID != int(team_member.team_id):
+        return {"message": "Team does not exist"}
+    
+
+    db.commit()
+    db.refresh(db_team_member)
+    return db_team_member
+
+
+def get_team_member(db: Session, team_member_id: int):
+    return (
+        db.query(models.TeamMember)
+        .filter(models.TeamMember.id == team_member_id)
+        .first()
+    )
+
+
+def get_team_members(db: Session, skip: int = 0, limit: int = 10):
+    counter = db.query(models.TeamMember).count()
+    data = db.query(models.TeamMember).offset(skip).limit(limit)
+    counterByFilters = data.count()
+    return {
+        "data": data,
+        "counter_team_members": counter,
+        "current_counter_show": counterByFilters,
+    }
+
+def __file_upload__(file, format_target: str):
+    basePatch = './static/uploads/media/'
+    if not os.path.exists(basePatch):
+        os.mkdir(basePatch)
+        pass
+
+    fileType = '.webp'
+
+    if len(format_target) > 0:
+        fileType = '.' + format_target
+    
+
+    randomId = random()
+    randomChoice = choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
+    hashedName = get_hashed_name(str(randomId) + randomChoice + file.filename) + fileType
+    fileUpload = os.path.join(basePatch, hashedName.replace('', ''))
+    with open(fileUpload, "wb") as buffer:
+        while contents := file.file.read(1024 * 1024):
+            buffer.write(contents)
+
+    return {
+        "name": hashedName,
+        "url": fileUpload,
+        "type": fileType,
+        "size": os.path.getsize(fileUpload),
+        "path": basePatch,
+        "format": format_target,
+        "uuid": get_hashed_name(str(randomId) + randomChoice + file.filename)
+    }
+
+def upload_media(db: Session, user_id: int = 1, media: any = None, media_json: str = None):
+    media_json = loads(media_json)
+    if media:
+        db_media = models.MediaGallery(
+            name=media_json["name"],
+            alt=( "%s - %s" % (media_json["name"], "pynoa media")),
+            media_url=media_json["url"],
+            mime_type=media_json["type"],
+            size=media_json["size"],
+            path=media_json["path"],
+            user_id=user_id
+        )
+        db.add(db_media)
+        db.commit()
+        db.refresh(db_media)
+        return {
+        "id": db_media.id,
+        "url": db_media.media_url,
+        "type": db_media.mime_type,
+        "size": db_media.size,
+        "path": db_media.path,
+        "name": db_media.name,
+        "user": get_user(db, user_id)
+    }
+    
+
+
+def get_media(db: Session, media_id: int):
+    return db.query(models.MediaGallery).filter(models.MediaGallery.id == media_id).first()
+
+
+def get_mediaGallery(db: Session, skip: int = 0, limit: int = 10):
+    counter = db.query(models.MediaGallery).count()
+    data = db.query(models.MediaGallery).offset(skip).limit(limit)
+    counterByFilters = data.count()
+    return {
+        "data": data.all(),
+        "counter_medias": counter,
+        "current_counter_show": counterByFilters,
+    }
+
+
+def delete_media(db: Session, media_id: int):
+    db_media = db.query(models.MediaGallery).filter(models.MediaGallery.id == media_id).first()
+    temp_media = db_media
+    db.delete(db_media)
+    db.commit()
+
+    if os.path.exists(db_media.path):
+        os.remove(db_media.path)
+    pass
+
+    return {
+        "id": media_id,
+        "message": "Media deleted successfully",
+        "deleted_media_resource": temp_media
     }

@@ -33,6 +33,25 @@ class Profile(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+    __allow_unmapped__ = True
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    team_id = Column(Integer, ForeignKey("teams.id"))
+    role = Column(String(800))
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())    
+
+class Team(Base):
+    __tablename__ = "teams"
+    __allow_unmapped__ = True
+    id = Column(Integer, primary_key=True)
+    name = Column(String(400))
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
 class Collection(Base):
     __tablename__ = "collections"
     id = Column(Integer, primary_key=True)
@@ -68,6 +87,8 @@ class ProductVariant(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(400))
     price = Column(Float)
+    currency_base = Column(String(75))
+    media_id = Column(Integer, ForeignKey("media_galleries.id"))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
@@ -97,7 +118,7 @@ class Inventory(Base):
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True)
-    title = Column(String(400))
+    name = Column(String(400))
     description = Column(String(800))
     cost = Column(Float)
     categories_list = Column(String(800))
@@ -216,5 +237,21 @@ class PaymentType(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(400))
     method_auth = Column(String(800))
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
+
+class MediaGallery(Base):
+    __tablename__ = "media_galleries"
+    id = Column(Integer, primary_key=True)
+    linked_id = Column(Integer) # product id, category id
+    linked_type = Column(String(800)) # product, category
+    media_url = Column(String(800))
+    path = Column(String(800))
+    alt = Column(String(800))
+    name = Column(String(800))
+    size = Column(BigInteger)
+    mime_type = Column(String(800))
+    user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())

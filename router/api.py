@@ -4,6 +4,11 @@ from orm_db import crud, schemas
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Body
 from helpers.getdb import get_db
+from fastapi import UploadFile, File
+from random import random, choice
+from json import dumps, loads
+from helpers.encryptgen import get_hashed_name
+import os
 
 api = Config().api
 
@@ -563,3 +568,86 @@ async def delete_inventory(
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
     return crud.delete_inventory(db=next(get_db()), inventory_id=invenroty_id)
+
+
+@api.patch("/media/upload/{convert}", response_model=schemas.MediaView)
+def upload_media(file: Annotated[UploadFile, File()], convert: str, db:Session=Depends(get_db), current_user=Depends(get_current_active_user)):
+    
+    if not current_user:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    basePatch = './static/uploads/media/'
+    if not os.path.exists(basePatch):
+        os.mkdir(basePatch)
+        pass
+
+    fileType = '.webp'
+
+    if len(convert) > 0:
+        fileType = '.' + convert
+    
+
+    randomId = random()
+    randomChoice = choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
+    hashedName = get_hashed_name(str(randomId) + randomChoice + file.filename) + fileType
+    fileUpload = os.path.join(basePatch, hashedName.replace('', ''))
+    with open(fileUpload, "wb") as buffer:
+        while contents := file.file.read(1024 * 1024):
+            buffer.write(contents)
+
+    
+    if current_user is None:
+        raise HTTPException(status_code=400, detail="User not found")
+    baseHost = os.environ.get('SERVER_URL')
+    return crud.upload_media(db=db, user_id=current_user['id'], media=fileUpload, media_json=dumps({
+        "url": ("%s%s" % (baseHost, fileUpload.replace('./', '/'))),
+        "type": fileType,
+        "size": os.path.getsize(fileUpload),
+        "path": fileUpload,
+        "name": hashedName
+    }))
+
+@api.get("/media/{media_id}")
+async def get_media(
+    media_id: int,
+    current_user=Depends(get_current_active_user),
+):
+    """
+    A function that handles the GET request to the root endpoint ("/") of the ADMIN API.
+
+    Returns:
+        dict: A dictionary containing the message "Hello World API".
+    """
+    if not current_user:
+        raise HTTPException(status_code=409, detail="Not logged in")
+    return crud.get_media(db=next(get_db()), media_id=media_id)
+
+
+@api.get("/gallery/media")
+async def get_media(
+    payload: schemas.ObjectByPagination = Body(...),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    A function that handles the GET request to the root endpoint ("/") of the ADMIN API.
+
+    Returns:
+        dict: A dictionary containing the message "Hello World API".
+    """
+    if not current_user:
+        raise HTTPException(status_code=409, detail="Not logged in")
+    return crud.get_mediaGallery(db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0)
+
+@api.delete("/media/{media_id}")
+async def delete_media(
+    media_id: int,
+    current_user=Depends(get_current_active_user),
+):
+    """
+    A function that handles the GET request to the root endpoint ("/") of the ADMIN API.
+
+    Returns:
+        dict: A dictionary containing the message "Hello World API".
+    """
+    if not current_user:
+        raise HTTPException(status_code=409, detail="Not logged in")
+    return crud.delete_media(db=next(get_db()), media_id=media_id)

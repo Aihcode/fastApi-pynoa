@@ -30,6 +30,17 @@ class User(UserBase):
         orm_model = True
 
 
+class MediaView(BaseModel):
+    id: int
+    url: str
+    size: int
+    type: str
+    path: str
+    name: str
+
+    class Config:
+        orm_model = True
+
 class ProfilePicture(BaseModel):
     pic_url : str
 
@@ -75,7 +86,7 @@ class Collection(BaseModel):
         orm_model = True
 
 class Product(BaseModel):
-    title : str
+    name : str
     description : str
     cost : float
     categories_list : list
@@ -129,6 +140,24 @@ class ProductOption(BaseModel):
     variant: int
     title: str
     
+
+    class Config:
+        orm_model = True
+
+
+class Team(BaseModel):
+    name : str
+    created_at : str
+    updated_at : str
+
+    class Config:
+        orm_model = True
+
+
+class TeamMember(BaseModel):
+    user_id : int
+    team_id : int
+    role : str # admin, member, moderator
 
     class Config:
         orm_model = True
