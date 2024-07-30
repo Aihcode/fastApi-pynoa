@@ -119,6 +119,7 @@ class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True)
     name = Column(String(400))
+    handle = Column(String(400), unique=True, index=True)
     description = Column(String(800))
     cost = Column(Float)
     categories_list = Column(String(800))

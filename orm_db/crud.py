@@ -7,6 +7,7 @@ from json import dumps, loads
 from datetime import datetime
 from random import random, choice
 import os
+import re
 
 
 def get_user(db: Session, user_id: int):
@@ -356,6 +357,7 @@ def create_product(db: Session, product: schemas.Product):
     # create product
     db_product = models.Product(
         name=product.name,
+        handle=re.sub('\W+','', product.name).replace(" ", "-"),
         description=product.description,
         cost=product.cost,
         categories_list=dumps(categories),
