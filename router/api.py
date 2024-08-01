@@ -1,6 +1,7 @@
 from config.app import Config
 from config.auth import get_current_active_user, User, Annotated, Depends
-from orm_db import crud, schemas
+from orm_db import crud as common_crud, schemas
+from orm_db.crud_master.product import product as product_crud, category as category_crud, tag as tag_crud
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Body
 from helpers.getdb import get_db
@@ -11,7 +12,6 @@ from helpers.encryptgen import get_hashed_name
 import os
 
 api = Config().api
-
 
 @api.get("/")
 async def index(
@@ -41,7 +41,7 @@ async def index_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_products(
+    return product_crud.get_products(
         db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0
     )
 
@@ -59,7 +59,7 @@ async def get_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_product(db=next(get_db()), product_id=product_id)
+    return product_crud.get_product(db=next(get_db()), product_id=product_id)
 
 
 @api.post("/product")
@@ -75,7 +75,7 @@ async def post_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_product(db=next(get_db()), product=payload)
+    return product_crud.create_product(db=next(get_db()), product=payload)
 
 
 @api.put("/product/{product_id}")
@@ -92,7 +92,7 @@ async def put_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_product(
+    return product_crud.update_product(
         db=next(get_db()), product=payload, product_id=product_id
     )
 
@@ -110,7 +110,7 @@ async def delete_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_product(db=next(get_db()), product_id=product_id)
+    return product_crud.delete_product(db=next(get_db()), product_id=product_id)
 
 
 @api.get("/product/variant/{variant_id}")
@@ -126,7 +126,7 @@ async def index_product_variant(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_product_variants(
+    return common_crud.get_product_variants(
         db=next(get_db()), variant_id=variant_id
     )
 
@@ -144,7 +144,7 @@ async def post_product_variant(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_product_variant(db=next(get_db()), product_variant=payload)
+    return common_crud.create_product_variant(db=next(get_db()), product_variant=payload)
 
 
 @api.put("/product/variant/{variant_id}")
@@ -161,7 +161,7 @@ async def put_product_variant(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_product_variant(
+    return common_crud.update_product_variant(
         db=next(get_db()), product_variant=payload, id=variant_id
     )
 
@@ -179,7 +179,7 @@ async def delete_product_variant(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_product_variant(db=next(get_db()), variant_id=variant_id)
+    return common_crud.delete_product_variant(db=next(get_db()), variant_id=variant_id)
 
 
 @api.get("/product/option")
@@ -195,7 +195,7 @@ async def index_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_product_options(
+    return common_crud.get_product_options(
         db=next(get_db(), limit=payload.limit or 10, skip=payload.skip or 0)
     )
 
@@ -213,7 +213,7 @@ async def post_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_product_option(db=next(get_db()), product_option=payload)
+    return common_crud.create_product_option(db=next(get_db()), product_option=payload)
 
 
 @api.put("/product/option/{option_id}")
@@ -230,7 +230,7 @@ async def put_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_product_option(
+    return common_crud.update_product_option(
         db=next(get_db()), product_option=payload, option_id=option_id
     )
 
@@ -248,7 +248,7 @@ async def delete_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_product(db=next(get_db()), product_id=product_id)
+    return common_crud.delete_product(db=next(get_db()), product_id=product_id)
 
 
 @api.get("/category")
@@ -264,7 +264,7 @@ async def all_category_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_categories(
+    return category_crud.get_categories(
         db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0
     )
 
@@ -284,7 +284,7 @@ async def one_category(
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
 
-    db_category = crud.get_category(db, category_id=category_id)
+    db_category = common_crud.get_category(db, category_id=category_id)
     return db_category
 
 
@@ -303,7 +303,7 @@ async def post_category_product(
 
     if not current_user:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    db_category = crud.create_category(db=db, category=payload)
+    db_category = category_crud.create_category(db=db, category=payload)
     return {"message": "Category created", "data": db_category}
 
 
@@ -321,7 +321,7 @@ async def put_category_product(
     """
     if not current_user:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return crud.update_category(
+    return category_crud.update_category(
         db=next(get_db()), category=payload, category_id=category_id
     )
 
@@ -339,7 +339,7 @@ async def delete_category_product(
     """
     if not current_user:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    return crud.delete_category(db=next(get_db()), category_id=category_id)
+    return category_crud.delete_category(db=next(get_db()), category_id=category_id)
 
 
 @api.get("/tag")
@@ -355,7 +355,7 @@ async def index_tag(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_tags(
+    return tag_crud.get_tags(
         db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0
     )
 
@@ -370,7 +370,7 @@ async def one_tag(tag_id: int, current_user=Depends(get_current_active_user)):
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_tag(db=next(get_db()), tag_id=tag_id)
+    return tag_crud.get_one(db=next(get_db()), tag_id=tag_id)
 
 
 @api.post("/tag")
@@ -386,7 +386,7 @@ async def post_tag(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_tag(db=next(get_db()), tag=tag_body)
+    return tag_crud.create(db=next(get_db()), tag=tag_body)
 
 
 @api.put("/tag/{tag_id}")
@@ -403,7 +403,7 @@ async def put_tag(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_tag(db=next(get_db()), tag_id=tag_id, tag=tag_body)
+    return tag_crud.update(db=next(get_db()), tag_id=tag_id, tag=tag_body)
 
 
 @api.delete("/tag/{tag_id}")
@@ -419,7 +419,7 @@ async def delete_tag(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_tag(db=next(get_db()), tag_id=tag_id)
+    return tag_crud.delete(db=next(get_db()), tag_id=tag_id)
 
 
 @api.get("/product/inventory/location")
@@ -435,7 +435,7 @@ async def index_inventory_location_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_inventory_location(
+    return common_crud.get_inventory_location(
         db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0
     )
 
@@ -454,7 +454,7 @@ async def post_inventory_location_product(
     
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_inventory_location(db=next(get_db()), inventory_location=payload)
+    return common_crud.create_inventory_location(db=next(get_db()), inventory_location=payload)
 
 
 @api.put("/product/inventory/location/{location_id}")
@@ -470,7 +470,7 @@ async def put_inventory_location_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_inventory_location(db=next(get_db()), location_id=location_id)
+    return common_crud.update_inventory_location(db=next(get_db()), location_id=location_id)
 
 
 @api.delete("/product/inventory/location/{location_id}")
@@ -486,7 +486,7 @@ async def delete_inventory_location_product(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_inventory_location(db=next(get_db()), location_id=location_id)
+    return common_crud.delete_inventory_location(db=next(get_db()), location_id=location_id)
 
 
 @api.get("/inventory")
@@ -503,7 +503,7 @@ async def index_inventory(
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
     
-    return crud.get_inventories(db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0)
+    return common_crud.get_inventories(db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0)
 
 @api.get("/inventory/{inventory_id}")
 async def index_inventory(
@@ -518,7 +518,7 @@ async def index_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_inventory(db=next(get_db()), inventory_id=inventory_id)
+    return common_crud.get_inventory(db=next(get_db()), inventory_id=inventory_id)
 
 
 @api.post("/inventory")
@@ -534,7 +534,7 @@ async def post_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.create_inventory(db=next(get_db()), inventory=payload)
+    return common_crud.create_inventory(db=next(get_db()), inventory=payload)
 
 
 @api.put("/inventory/{invenroty_id}")
@@ -551,7 +551,7 @@ async def put_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.update_inventory(db=next(get_db()), inventory=payload,inventory_id=invenroty_id)
+    return common_crud.update_inventory(db=next(get_db()), inventory=payload,inventory_id=invenroty_id)
 
 
 @api.delete("/inventory/{invenroty_id}")
@@ -567,7 +567,7 @@ async def delete_inventory(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_inventory(db=next(get_db()), inventory_id=invenroty_id)
+    return common_crud.delete_inventory(db=next(get_db()), inventory_id=invenroty_id)
 
 
 @api.patch("/media/upload/{convert}", response_model=schemas.MediaView)
@@ -598,7 +598,7 @@ def upload_media(file: Annotated[UploadFile, File()], convert: str, db:Session=D
     if current_user is None:
         raise HTTPException(status_code=400, detail="User not found")
     baseHost = os.environ.get('SERVER_URL')
-    return crud.upload_media(db=db, user_id=current_user['id'], media=fileUpload, media_json=dumps({
+    return common_crud.upload_media(db=db, user_id=current_user['id'], media=fileUpload, media_json=dumps({
         "url": ("%s%s" % (baseHost, fileUpload.replace('./', '/'))),
         "type": fileType,
         "size": os.path.getsize(fileUpload),
@@ -619,7 +619,7 @@ async def get_media(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_media(db=next(get_db()), media_id=media_id)
+    return common_crud.get_media(db=next(get_db()), media_id=media_id)
 
 
 @api.get("/gallery/media")
@@ -635,7 +635,7 @@ async def get_media(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.get_mediaGallery(db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0)
+    return common_crud.get_mediaGallery(db=next(get_db()), limit=payload.limit or 10, skip=payload.skip or 0)
 
 @api.delete("/media/{media_id}")
 async def delete_media(
@@ -650,4 +650,4 @@ async def delete_media(
     """
     if not current_user:
         raise HTTPException(status_code=409, detail="Not logged in")
-    return crud.delete_media(db=next(get_db()), media_id=media_id)
+    return common_crud.delete_media(db=next(get_db()), media_id=media_id)

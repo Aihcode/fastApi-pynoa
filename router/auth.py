@@ -110,7 +110,7 @@ def update_user(file: Annotated[UploadFile, File()], convert: str, db:Session=De
     """
     if not current_user:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    basePatch = './static/uploads'
+    basePatch = './static/uploads/profiles/media/'
     if not os.path.exists(basePatch):
         os.mkdir(basePatch)
         pass

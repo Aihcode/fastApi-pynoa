@@ -1,7 +1,17 @@
-from sqlalchemy import Boolean, DateTime, Column, ForeignKey, Integer, BigInteger, String, Float
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Column,
+    ForeignKey,
+    Integer,
+    BigInteger,
+    String,
+    Float,
+)
 from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -42,7 +52,8 @@ class TeamMember(Base):
     team_id = Column(Integer, ForeignKey("teams.id"))
     role = Column(String(800))
     created_at = Column(DateTime, default=datetime.now())
-    updated_at = Column(DateTime, default=datetime.now())    
+    updated_at = Column(DateTime, default=datetime.now())
+
 
 class Team(Base):
     __tablename__ = "teams"
@@ -51,6 +62,7 @@ class Team(Base):
     name = Column(String(400))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
+
 
 class Collection(Base):
     __tablename__ = "collections"
@@ -64,6 +76,7 @@ class Collection(Base):
     sort_by = Column(String(800))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
+
 
 class Category(Base):
     __tablename__ = "categories"
@@ -92,6 +105,7 @@ class ProductVariant(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
+
 class InventoryLocation(Base):
     __tablename__ = "inventory_locations"
     id = Column(Integer, primary_key=True)
@@ -99,6 +113,7 @@ class InventoryLocation(Base):
     address = Column(String(800))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
+
 
 class Inventory(Base):
     __tablename__ = "inventory"
@@ -115,6 +130,7 @@ class Inventory(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
+
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True)
@@ -127,6 +143,7 @@ class Product(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
+
 class ProductOption(Base):
     __tablename__ = "product_options"
     id = Column(Integer, primary_key=True)
@@ -135,21 +152,33 @@ class ProductOption(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
+
+class Customer(Base):
+    __tablename__ = "customers"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    email = Column(String(400), unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
+
 class Order(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True)
     order_number = Column(String(400))
+    customer_id = Column(Integer, ForeignKey("customers.id"))
     amount = Column(Float)
     discount = Column(Float)
     local_tax = Column(Float)
-    products = Column(String(800))
     address = Column(String(800))
     email = Column(String(400))
     date_expiration = Column(DateTime, default=datetime.now())
     date_payment = Column(DateTime, default=datetime.now())
     payment = Column(String(800))
     phoneNumber = Column(String(400))
+    status = Column(String(800))
     on_hold = Column(Boolean, default=True)
+    is_shipped = Column(Boolean, default=False)
     is_credit = Column(Boolean, default=False)
     is_preorder = Column(Boolean, default=False)
     is_paid = Column(Boolean, default=False)
@@ -168,6 +197,26 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Float)
     price = Column(Float)
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
+
+class InvoiceCounter(Base):
+    __tablename__ = "invoice_counters"
+    id = Column(Integer, primary_key=True)
+    invoice_number = Column(Integer)
+    prefix = Column(String(800))
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    id = Column(Integer, primary_key=True)
+    invoice_number = Column(String(800), index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"))
+    amount = Column(Float)
+    discount = Column(Float)
+    local_tax = Column(Float)
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
@@ -198,11 +247,14 @@ class ShippingDeliveryRate(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
+
 class ShippingDeliveryTransaction(Base):
     __tablename__ = "shipping_addresses_transactions"
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey("orders.id"))
     address = Column(String(800))
+    lat = Column(Float)
+    lng = Column(Float)
     shipping_delivery_id = Column(Integer, ForeignKey("shipping_deliveries.id"))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
@@ -245,8 +297,8 @@ class PaymentType(Base):
 class MediaGallery(Base):
     __tablename__ = "media_galleries"
     id = Column(Integer, primary_key=True)
-    linked_id = Column(Integer) # product id, category id
-    linked_type = Column(String(800)) # product, category
+    linked_id = Column(Integer)  # product id, category id
+    linked_type = Column(String(800))  # product, category
     media_url = Column(String(800))
     path = Column(String(800))
     alt = Column(String(800))
