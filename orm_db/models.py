@@ -20,7 +20,7 @@ class User(Base):
     email = Column(String(400), unique=True, index=True)
     profile_id = Column(Integer, nullable=True)
     hashed_password = Column(String(800))
-    validatetion_code = Column(String(800))
+    validation_code = Column(String(800))
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
@@ -100,6 +100,8 @@ class ProductVariant(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(400))
     price = Column(Float)
+    stripe_variant_id = Column(String(800))
+    stripe_price_id = Column(String(800))
     currency_base = Column(String(75))
     media_id = Column(Integer, ForeignKey("media_galleries.id"))
     created_at = Column(DateTime, default=datetime.now())
@@ -140,6 +142,7 @@ class Product(Base):
     cost = Column(Float)
     categories_list = Column(String(800))
     tags_list = Column(String(800))
+    on_stripe = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
@@ -212,7 +215,7 @@ class InvoiceCounter(Base):
 class Invoice(Base):
     __tablename__ = "invoices"
     id = Column(Integer, primary_key=True)
-    invoice_number = Column(String(800), index=True)
+    invoice_number = Column(String(800))
     order_id = Column(Integer, ForeignKey("orders.id"))
     amount = Column(Float)
     discount = Column(Float)
@@ -281,6 +284,7 @@ class PaymentMethod(Base):
     public_key = Column(String(800))
     jwt_key = Column(String(800))
     payment_type = Column(BigInteger, nullable=False)
+    disabled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())
 
@@ -306,5 +310,36 @@ class MediaGallery(Base):
     size = Column(BigInteger)
     mime_type = Column(String(800))
     user_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
+
+class QuequeTasks(Base):
+    __tablename__ = "queque_tasks"
+    id = Column(Integer, primary_key=True)
+    task = Column(String(800))
+    module = Column(String(800))
+    current_id = Column(Integer)
+    last_id = Column(Integer)
+    completed = Column(Boolean, default=False)
+    failed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now())
+
+
+
+class MailNotifications(Base):
+    __tablename__ = "mail_notifications"
+    id = Column(Integer, primary_key=True)
+    from_param = Column(String(800))
+    to_list = Column(String(800))
+    title = Column(String(800))
+    subject = Column(String(800))
+    body = Column(String(800))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    is_sent = Column(Boolean, default=False)
+    is_readed = Column(Boolean, default=False)
+    is_validated = Column(Boolean, default=False)
+    token = Column(String(800))
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now())

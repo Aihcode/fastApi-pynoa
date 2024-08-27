@@ -1,6 +1,8 @@
+
 from config.app import Config
 from fastapi import Request as requests
 from fastapi.templating import Jinja2Templates
+
 web = Config().web
 templates = Jinja2Templates(directory="templates")
 

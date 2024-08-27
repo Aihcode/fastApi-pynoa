@@ -54,6 +54,9 @@ def cancel_order(db: Session, order_id: int):
     db_order = db.query(models.Order).filter(models.Order.id == order_id).first()
     db_order.is_cancelled = True
     db.commit()
+
+    __delete_order_items_by_order_id__(db, order_id)
+
     return db_order
 
 
@@ -96,7 +99,7 @@ def delete_order_item_by_id(db: Session, item_id: int):
     db.query(models.Order).filter(models.OrderItem.id == item_id).delete()
     db.commit()
 
-def delete_order_items_by_order_id(db: Session, order_id: int):
+def __delete_order_items_by_order_id__(db: Session, order_id: int):
     db.query(models.OrderItem).filter(models.OrderItem.order_id == order_id).delete()
     db.commit()
 

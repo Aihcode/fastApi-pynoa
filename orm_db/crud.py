@@ -566,3 +566,51 @@ def delete_media(db: Session, media_id: int):
         "message": "Media deleted successfully",
         "deleted_media_resource": temp_media
     }
+
+
+def get_mail_notifications(db: Session, is_validated: bool = False, skip: int = 0, limit: int = 10):
+    counter = db.query(models.MailNotifications).count()
+    data = db.query(models.MailNotifications).filter(models.MailNotifications.is_validated == is_validated).offset(skip).limit(limit)
+    counterByFilters = data.count()
+    return {
+        "data": data.all(),
+        "counter_mail_notifications": counter,
+        "current_counter_show": counterByFilters,
+    }
+
+
+def get_mail_notification(db: Session, mail_notification_id: int):
+    return db.query(models.MailNotifications).filter(
+        models.MailNotifications.id == mail_notification_id
+    ).first()
+
+
+def create_mail_notification(db: Session, mail_notification: schemas.MailNotificationCreate):
+    
+    db_mail_notification = models.MailNotifications(
+        from_param=mail_notification["from_param"],
+        to_list=mail_notification["to_list"],
+        subject=mail_notification["subject"],
+        body=mail_notification["body"],
+        token=mail_notification["token"],
+        user_id=mail_notification["user_id"],
+        is_validated=mail_notification["is_validated"]
+    )
+    db.add(db_mail_notification)
+    db.commit()
+    db.refresh(db_mail_notification)
+    return db_mail_notification
+
+
+def delete_mail_notification(db: Session, mail_notification_id: int):
+    db_mail_notification = db.query(models.MailNotifications).filter(
+        models.MailNotifications.id == mail_notification_id
+    ).first()
+    temp_mail_notification = db_mail_notification
+    db.delete(db_mail_notification)
+    db.commit()
+    return {
+        "id": mail_notification_id,
+        "message": "Mail notification deleted successfully",
+        "deleted_mail_notification_resource": temp_mail_notification
+    }

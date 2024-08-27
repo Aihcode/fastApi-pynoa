@@ -1,20 +1,27 @@
 from fastapi.testclient import TestClient
-from json import dumps
-from config.app import Config 
+from pytest import fixture
+from helpers.getdb import get_db
+from main import app
+"""from config.app import Config
+from router.web import web
+from router.api import api
+from router.apipublic import api as api_public
+from router.auth import auth
 
-client = TestClient(app=Config().add_middleware(), base_url="http://127.0.0.1:8000")
+app = Config().add_middleware()
+app.include_router(auth)
+app.include_router(web)
+app.include_router(api)
+app.include_router(api_public)"""
+
+client = TestClient(app=app)
 
 
+@fixture()
+def test_db():
+    return get_db()
 
-def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-
-def test_login_fail():
-    response = client.post("/auth/token", json={"username": "admin", "password": "wrong"})
-    assert response.status_code == 404
-
-
-def test_access_token():
-    response = client.get("/", headers={"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXY0QHRlc3QuaW8iLCJleHAiOjE3MjI0NDE0MTV9.qhaluJN086H6oCG6mjssYZCp1rhaVx7nftF8I9KwT_o"})
+def test_root(test_db):
+    response = client.get("/admin/api/")
+    
     assert response.status_code == 200

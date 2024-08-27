@@ -78,6 +78,11 @@ class ObjectByPagination(BaseModel):
     limit: int
     skip: int
 
+class ObjectByPaginationwithFilter(BaseModel):
+    limit: int
+    skip: int
+    keyword: str
+
 
 class ObjectID(BaseModel):
     id: int
@@ -145,6 +150,7 @@ class InventoryLocation(BaseModel):
 class ProductVariant(BaseModel):
     title: str
     price: float
+    currency_base: str
 
     class Config:
         orm_model = True
@@ -279,3 +285,34 @@ class OrderItemCreate(BaseModel):
 
 class OrderItemUpdate(BaseModel):
     order_id: int
+
+
+class InvoiceCreate(BaseModel):
+    invoice_number: str
+    order_id: int
+    amount: float
+    discount: float
+    local_tax: float
+    created_at: str
+    updated_at: str
+
+class InvoiceFilter(BaseModel):
+    invoice_number: str
+    order_id: int
+    created_at: str
+    updated_at: str
+
+
+class MailNotification(BaseModel):
+    title: str
+    from_param: str
+    to_list: list
+    subject: str
+    body: str
+    token: str
+    created_at: str
+    updated_at: str
+
+
+class MailNotificationCreate(MailNotification):
+    user_id: int

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from json import loads
+from pydash import omit
 
 def __get_inventory_location_name__(db: Session, inventory_location_id: int):
     db_location = db.query(models.InventoryLocation).filter(
@@ -19,7 +20,8 @@ def __get_inventory_location_name__(db: Session, inventory_location_id: int):
         "address": db_location.address
     }
 
-def __get_variants__(db: Session, product_id: int, cost: int = 0):
+def __get_variants__(db: Session, product: object, cost: int = 0, omit_into_variants: list = []):
+            product_id = product.id
             db_inventory = db.query(models.Inventory).filter(
                 models.Inventory.product_id == product_id
             )
@@ -47,11 +49,14 @@ def __get_variants__(db: Session, product_id: int, cost: int = 0):
                 
                 
                 location_code = ("%s%s%s%s" % (inventory.inventory_location_id, inventory.id, int(inventory.lat), abs(int(inventory.lng))))
-                variants.append(
-                    {
+                
+                stripe_price = db_one_variant.stripe_price_id
+
+                pre_append = {
                         "id": db_one_variant.id,
                         "title": db_one_variant.title,
                         "price": db_one_variant.price,
+                        "price_stripe_id": stripe_price,
                         "availability": availability,
                         "currency_base": db_one_variant.currency_base,
                         "stock_value": float("{:.3f}".format(stock_value)),
@@ -74,8 +79,11 @@ def __get_variants__(db: Session, product_id: int, cost: int = 0):
                             }
                         ]
                     }
-                )
 
+                variants.append(
+                    omit(pre_append, omit_into_variants)
+                )
+                 
             return variants
 
 def __get_categories_from_mapper__(db: Session, mapper: list):

@@ -39,12 +39,13 @@ def update(db: Session, invoice_id: int, invoice: schemas.InvoiceCreate):
     return db_invoice
 
 
-def delete(db: Session, invoice_id: int):
+def cancel(db: Session, invoice_id: int):
     db_invoice = (
         db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
     )
-    db.delete(db_invoice)
+    db_invoice.is_cancelled = True
     db.commit()
+    db.refresh(db_invoice)
     return db_invoice
 
 

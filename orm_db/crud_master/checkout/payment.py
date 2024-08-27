@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from ... import models, schemas
+from payments.stripe import gateway as stripe
 
 
 def create_payment_type(db: Session, payment_type: schemas.PaymentTypeCreate):
-    db_payment_type = models.PaymentType(**payment_type.dict())
+    db_payment_type = models.PaymentType(**payment_type)
     db.add(db_payment_type)
     db.commit()
     db.refresh(db_payment_type)
@@ -51,7 +52,7 @@ def delete_payment_type(db: Session, payment_type_id: int):
 
 
 def create_payment_method(db: Session, payment_method: schemas.PaymentMethodCreate):
-    db_payment_method = models.PaymentMethod(**payment_method.dict())
+    db_payment_method = models.PaymentMethod(**payment_method)
     db.add(db_payment_method)
     db.commit()
     db.refresh(db_payment_method)
@@ -98,6 +99,24 @@ def delete_payment_method(db: Session, payment_method_id: int):
     return db_payment_method
 
 
+def __stripe__():
+    return stripe.gateway()
+    pass
+
+def __paypal__():
+    pass
+
+# private: no need to expose
+def __define_payment_method_to_use__(db: Session, payment_method_id: int):
+    db_payment_method = get_payment_method(db, payment_method_id)
+
+    match db_payment_method.title:
+        case "stripe":
+            return __stripe__()
+        case "paypal":   
+            return __paypal__() 
+# private: no need to expose
+
 def create_payment_transaction(
     db: Session, payment_transaction: schemas.PaymentTransactionCreate
 ):
@@ -127,7 +146,7 @@ def get_payment_transactions(db: Session, limit: int = 10, offset: int = 0):
     }
 
 
-def delete_payment_transaction(db: Session, payment_transaction_id: int):
+def cancel_payment_transaction(db: Session, payment_transaction_id: int):
     db_payment_transaction = get_payment_transaction(db, payment_transaction_id)
     if not db_payment_transaction:
         return None
@@ -249,9 +268,9 @@ def get_shipping_delivery_transaction(db: Session, shipping_delivery_transaction
     )
 
 
-def get_shipping_delivery_transactions(db: Session, limit: int = 10, offset: int = 0):
+def get_shipping_delivery_transactions(db: Session, limit: int = 10, skip: int = 0):
     counter = db.query(models.ShippingDeliveryTransaction).count()
-    data = db.query(models.ShippingDeliveryTransaction).offset(offset).limit(limit)
+    data = db.query(models.ShippingDeliveryTransaction).offset(skip).limit(limit)
     counterByFilters = data.count()
     return {
         "data": data.all(),
